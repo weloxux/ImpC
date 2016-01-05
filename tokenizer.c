@@ -16,7 +16,9 @@ FILE* tokenize(const char* filename) {
 		prev = cur;
 		cur = fgetc(file);
 
-		if (comm) { // Normal comments
+		if (!comm && !lcomm && !str) {
+			fputc(cur, tokens);
+		} else if (comm) { // Normal comments
 			if (cur == "*" && prev == "/") {
 				comm = false;
 			}

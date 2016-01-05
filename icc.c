@@ -8,6 +8,8 @@ int panic(const char* msg) {
 }
 
 int main(int argc, char* argv[]) {
+	char cur;
+
 	if (argc < 2) {
 		panic("Not enough arguments");
 	}
@@ -15,7 +17,8 @@ int main(int argc, char* argv[]) {
 	FILE* tokens = tokenize(argv[1]);
 
 	while (!feof(tokens)) {
-		printf("%s", fgetc(tokens));
+		cur = fgetc(tokens);
+		printf("%c", cur);
 	}
 
 	return EXIT_SUCCESS;
