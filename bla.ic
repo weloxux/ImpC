@@ -1,0 +1,5 @@
+// ImpC test file
+
+int main() {
+	print("Good day"); /* bla */
+}

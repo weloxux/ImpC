@@ -1,41 +1,63 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <stdbool.h>
+#include "flag.h"
+#include "token.h"
+#include <string.h>
+#include <stdio.h> // TEMP
 
-FILE* tokenize(const char* filename) {
-	FILE* file;
-	FILE* tokens = tmpfile();
-	char cur, prev;
-	bool str = false, comm = false, lcomm = false; // Flags for strings, comments, and line comments respectively
+char** tokenize(const char* program) {
+	const char* startnamechars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ_";
+	const char* allnamechars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890-_";
+	int pindex = 0;
+	int tindex = 0;
+	int line = 1;
+	int i;
+	flag string = OFF;
+	flag name = OFF;
+	flag prev = OFF;
 
-	if (!(file = fopen(filename, "r"))) {
-		panic("File not found");
-	}
-
-	while (!feof(file)) {
-		prev = cur;
-		cur = fgetc(file);
-
-		if (!comm && !lcomm && !str) {
-			fputc(cur, tokens);
-		} else if (comm) { // Normal comments
-			if (cur == "*" && prev == "/") {
-				comm = false;
-			}
-		} else if (lcomm) {
-			if (cur == "\n") {
-				lcomm = false;
-			}
-		} else if (str) {
-			if (cur == "\"" && prev != "\\") {
-				str = false;
+	for (i = 0; i < strlen(program); i++) {
+		if (string == ON) {	// String mode
+			if (program[pindex] == "\"" && program[pindex - 1] != "\\") {
+				string = OFF;
+				tindex++;
+			} else if (program[pindex] == "\n") {
+				panic("Illegal newline in string", line);
 			} else {
-				fputc(cur, tokens);
+				strcat(tokens[tindex], program[pindex]);
+			}
+		} else {		// Normal mode
+			switch (program[pindex]) {
+			case '\"':
+				string = ON;
+				tokens[tindex] = "STR_";
+			case ';':
+				tindex++;
+				name = OFF;
+			case '\n':
+				line++;
+			case '/':
+				tokens[tindex] = "ODV_";
+				tindex++;
+			default: // Variable names
+				if (name == ON) {
+					if (strchr(allnamechars, program[pindex])) {
+						strcat(tokens[tindex], program[pindex]);
+					} else {
+						panic("Illegal character in variable name", line);
+					}
+				} else {
+					if (strchr(startnamechars, program[pindex])) {
+						name = ON;
+						prev = FNC;
+						//tindex++;
+						tokens[tindex] = "VAR_";
+					} else {
+						panic("Illegal character in non-variable position", line);
+					}
+				}
 			}
 		}
+		pindex++;
 	}
-
-	fclose(file);
-
+	
 	return tokens;
 }
